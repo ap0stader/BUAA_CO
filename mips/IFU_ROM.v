@@ -1,4 +1,4 @@
-// Verified: 2024-08-27
+// Verified: 2024-08-28
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -7,7 +7,7 @@ module IFU_ROM(
     output wire [31:0] D
     );
     
-    // IM容量为16KiB
+    // IM容量为16KiB 
     // 4096 × 32bit
     reg [31:0] ROM [4095:0];
     

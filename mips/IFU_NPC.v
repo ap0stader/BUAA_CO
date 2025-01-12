@@ -1,4 +1,4 @@
-// Verified: 2024-08-27
+// Verified: 2024-08-28
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -18,9 +18,10 @@ module IFU_NPC(
     wire [31:0] jr_and_jalr;
     
     assign normal = PC + 32'h00000004;
-
-    // 偏移值是有符号拓展
-    assign branch = BranchComp ? normal + {{14{offset[15]}}, offset, 2'b00} : normal;
+    
+    // 流水线CPU分支指令不需要PC+4后再加上offset，直接在延迟槽的地址上加。
+    assign branch = BranchComp ? PC + {{14{offset[15]}}, offset, 2'b00} : 
+                                 normal;
     
     assign j_and_jal = {PC[31:28], instr_index, 2'b00};
     

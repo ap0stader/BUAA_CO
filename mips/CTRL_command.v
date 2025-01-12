@@ -1,13 +1,13 @@
-// Verified: 2024-08-27
-`timescale 1ns / 1ps
+// Verified: 2024-08-28
 
-// 算数与逻辑类
+// 算数与逻辑运算类
 // 1.算数类
 `define R_add 6'b100000
-`define R_addu 6'b100001 
+`define R_addu 6'b100001
 `define R_sub 6'b100010
 `define R_subu 6'b100011
 
+`define I_addi 6'b001000
 `define I_addiu 6'b001001
 
 // 2.逻辑类
@@ -34,6 +34,7 @@
 `define I_slti 6'b001010
 `define I_sltiu 6'b001011
 `define I_lui 6'b001111
+
 
 // 分支与跳转类
 // 1.分支类

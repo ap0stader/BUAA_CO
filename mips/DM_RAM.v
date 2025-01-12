@@ -1,4 +1,4 @@
-// Verified: 2024-08-27
+// Verified: 2024-08-28
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -7,10 +7,8 @@ module DM_RAM(
     input wire clk,
     input wire WE,
     input wire [31:0] A,
-    input wire [31:0] D_write,
-    output wire [31:0] D_read,
-    // 输入PC是因为评测需要输出
-    input wire [31:0] PC
+    input wire [31:0] D,
+    output wire [31:0] Q
     );
 
     // DM容量为12KiB
@@ -23,7 +21,9 @@ module DM_RAM(
     wire [11:0] RAM_address;
     assign RAM_address = A[13:2];
 
-    assign D_read = RAM[RAM_address];
+    // 消除不必要的因为RAM大小导致的读更高地址数据时出现的X
+    assign Q = (A[13:12] == 2'b11) ? 32'h00000000 :
+               RAM[RAM_address];
 
     integer i;
 
@@ -34,8 +34,7 @@ module DM_RAM(
             end
         end
         else if (WE) begin
-            $display("@%h: *%h <= %h", PC, A, D_write);
-            RAM[RAM_address] <= D_write;
+            RAM[RAM_address] <= D;
         end
     end
 

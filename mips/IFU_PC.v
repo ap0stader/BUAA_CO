@@ -1,10 +1,11 @@
-// Verified: 2024-08-27
+// Verified: 2024-08-28
 `timescale 1ns / 1ps
 
 `default_nettype none
 module IFU_PC(
     input wire RESET,
     input wire clk,
+    input wire STALL_EN_N,
     input wire [31:0] D,
     output wire [31:0] Q
     );
@@ -12,11 +13,11 @@ module IFU_PC(
     reg [31:0] PC;
     
     always @(posedge clk) begin
-        // 复位值为代码起始地址0x00003000
         if(RESET) begin
             PC <= 32'h00003000;
         end
-        else begin
+        // 没有暂停使能信号时才更新PC
+        else if(~ STALL_EN_N) begin
             PC <= D;
         end
     end
