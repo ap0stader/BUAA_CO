@@ -13,7 +13,7 @@ module ALU(
 
     // Arithmetic
     // OPSel = 00
-    
+
     wire [31:0] Arithmetic;
     // FuncSel = X0
     wire [31:0] Arithmetic_add;
@@ -71,9 +71,6 @@ module ALU(
                    (FuncSel == 2'b10) ? Shift_logical_right :
                    Shift_arithmetic_right; // FuncSel == 2'b11
 
-    // 不带v的移位指令，rs固定为5'd0，读取的是0号寄存器，A必定为0
-    // 带v的移位指令，shamt固定为0
-    // 直接将两者相加即可得到移动的位数
     assign Shift_shamt = A[4:0] + shamt;
 
     assign Shift_logical_left = B << Shift_shamt;

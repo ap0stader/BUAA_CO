@@ -19,7 +19,6 @@ module IFU_NPC(
     
     assign normal = PC + 32'h00000004;
     
-    // 流水线CPU分支指令不需要PC+4后再加上offset，直接在延迟槽的地址上加。
     assign branch = BranchComp ? PC + {{14{offset[15]}}, offset, 2'b00} : 
                                  normal;
     

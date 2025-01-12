@@ -16,7 +16,6 @@ module IFU_PC(
         if(RESET) begin
             PC <= 32'h00003000;
         end
-        // 没有暂停使能信号时才更新PC
         else if(~ STALL_EN_N) begin
             PC <= D;
         end

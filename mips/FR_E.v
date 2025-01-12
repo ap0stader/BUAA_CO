@@ -18,6 +18,9 @@ module FR_E (
     input wire [1:0] D_OPSel,
     input wire [1:0] D_GRF_WD_W_Sel,
     input wire D_ALU_B_E_Sel,
+    input wire D_OP_E_Sel,
+    input wire [2:0] D_MULTSel,
+    input wire D_ISMULTDIV,
     input wire [31:0] D_V1,
     input wire [31:0] D_V2,
     input wire [4:0] D_shamt,
@@ -35,6 +38,9 @@ module FR_E (
     output reg [1:0] Q_OPSel,
     output reg [1:0] Q_GRF_WD_W_Sel,
     output reg Q_ALU_B_E_Sel,
+    output reg Q_OP_E_Sel,
+    output reg [2:0] Q_MULTSel,
+    output reg Q_ISMULTDIV,
     output reg [31:0] Q_V1,
     output reg [31:0] Q_V2,
     output reg [4:0] Q_shamt,
@@ -58,6 +64,9 @@ module FR_E (
             Q_OPSel <= 2'b0;
             Q_GRF_WD_W_Sel <= 2'b0;
             Q_ALU_B_E_Sel <= 1'b0;
+            Q_OP_E_Sel <= 1'b0;
+            Q_MULTSel <= 3'b0;
+            Q_ISMULTDIV <= 1'b0;
             Q_V1 <= 32'b0;
             Q_V2 <= 32'b0;
             Q_shamt <= 5'b0;
@@ -79,6 +88,9 @@ module FR_E (
             Q_OPSel <= D_OPSel;
             Q_GRF_WD_W_Sel <= D_GRF_WD_W_Sel;
             Q_ALU_B_E_Sel <= D_ALU_B_E_Sel;
+            Q_OP_E_Sel <= D_OP_E_Sel;
+            Q_MULTSel <= D_MULTSel;
+            Q_ISMULTDIV <= D_ISMULTDIV;
             Q_V1 <= D_V1;
             Q_V2 <= D_V2;
             Q_shamt <= D_shamt;

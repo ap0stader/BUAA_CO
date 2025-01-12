@@ -11,7 +11,6 @@ module IFU(
     input wire [15:0] offset,
     input wire [25:0] instr_index,
     input wire [31:0] instr_register,
-    output wire [31:0] Instr,
     output wire [31:0] InstrAddr
     );
     
@@ -30,8 +29,5 @@ module IFU(
                          .instr_index(instr_index),
                          .instr_register(instr_register),
                          .NPC(NPC_NPC));
-                
-    IFU_ROM ROM_instance(.A(InstrAddr),
-                         .D(Instr));
 
 endmodule

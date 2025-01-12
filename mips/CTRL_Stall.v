@@ -13,6 +13,9 @@ module CTRL_Stall (
     input wire [1:0] GRF_WD_W_Sel_M,
     input wire [4:0] GRF_A3_E,
     input wire [4:0] GRF_A3_M,
+    input wire ISMULTDIV,
+    input wire MULT_Start,
+    input wire MULT_Busy,
 
     output wire IFU_EN_N,
     output wire FR_D_EN_N,
@@ -77,9 +80,13 @@ module CTRL_Stall (
                 (rt_M_premise &
                     (rt_S3));
 
+    // MULTDIV
+
+    wire SMULTDIV = ISMULTDIV & (MULT_Start | MULT_Busy);
+
     // S
     
-    wire S = rs_S | rt_S;
+    wire S = rs_S | rt_S | SMULTDIV;
 
     assign IFU_EN_N   = S;
 

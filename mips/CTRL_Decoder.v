@@ -15,6 +15,8 @@ module CTRL_Decoder(
 
     output wire [1:0] OPSel,
     output wire [1:0] FuncSel,
+    output wire [2:0] MULTSel,
+    output wire ISMULTDIV,
 
     output wire [2:0] DMSel,
     output wire DMWE,
@@ -24,6 +26,7 @@ module CTRL_Decoder(
     output wire [1:0] GRF_A3_D_Sel,
     output wire [1:0] GRF_WD_W_Sel,
     output wire ALU_B_E_Sel,
+    output wire OP_E_Sel,
 
     output wire [1:0] Tuse_rs,
     output wire [1:0] Tuse_rt
@@ -62,6 +65,16 @@ module CTRL_Decoder(
     wire I_andi = IJ & (opcode == `I_andi);
     wire I_ori  = IJ & (opcode == `I_ori);
     wire I_xori = IJ & (opcode == `I_xori);
+
+    // 3.乘除法类
+    wire R_mult  = R & (funct == `R_mult);
+    wire R_multu = R & (funct == `R_multu);
+    wire R_div   = R & (funct == `R_div);
+    wire R_divu  = R & (funct == `R_divu);
+    wire R_mfhi  = R & (funct == `R_mfhi);
+    wire R_mthi  = R & (funct == `R_mthi);
+    wire R_mflo  = R & (funct == `R_mflo);
+    wire R_mtlo  = R & (funct == `R_mtlo);
     
 
     // 寄存器操作类
@@ -104,52 +117,79 @@ module CTRL_Decoder(
 
 
     // 指令分类信号
-    // P5要求实现指令：
-    // add, sub, ori, lw, sw, beq, lui, jal, jr, nop
 
-    wire ALREG = R_addu | R_subu;
+    wire ALREG = R_add | R_addu | R_sub | R_subu |
+                 R_and | R_or   | R_xor | R_nor  | 
+                 R_sll | R_srl  | R_sra | R_sllv | R_srlv | R_srav |
+                 R_slt | R_sltu;
 
-    wire ALIMM = I_ori;
+    wire ALIMM = I_addi | I_addiu | I_slti | I_sltiu |
+                 I_andi | I_ori | I_xori;
+
+    wire MULTDIV = R_mult | R_multu | R_div | R_divu;
+
+    wire MLTO = R_mthi | R_mtlo;
+
+    wire MLFROM = R_mfhi | R_mflo;
 
     wire EXTLUI = I_lui;
 
-    wire BRANCHE = I_beq;
-
-    wire BRANCHZ = 1'b0;
+    wire BRANCHE = I_beq | I_bne;
+                  
+    wire BRANCHZ = rt_bltz | rt_bgez |
+                   I_blez | I_bgtz;
 
     wire JUMPR  = R_jr;
 
     wire JUMPW  = J_jal;
 
-    wire JUMPRW = 1'b0;
+    wire JUMPRW = R_jalr;
 
-    wire LOAD  = I_lw;
+    wire LOAD  = I_lb | I_lh | I_lw | I_lbu | I_lhu;
 
-    wire STORE = I_sw;
+    wire STORE = I_sb | I_sh | I_sw;
 
 
     // CTRL_OR
-    
-    assign CompSel = 3'b100; // Only beq. Fixed 3'b100
 
-    assign EXTSel = (I_ori) ? 2'b01 :
+    assign CompSel = (rt_bltz) ? 3'b000 :
+                     (rt_bgez) ? 3'b001 : 
+                     (I_beq)   ? 3'b100 :
+                     (I_bne)   ? 3'b101 :
+                     (I_blez)  ? 3'b110 :
+                     3'b111; // I_bgtz和其他
+
+    assign EXTSel = (I_andi | I_ori | I_xori) ? 2'b01 :
                     (I_lui) ? 2'b10 :
                     2'b00; // 其他
 
-    assign NPCSel = (BRANCHE) ? 2'b01 :
-                    (J_jal)   ? 2'b10 :
-                    (R_jr)    ? 2'b11 :
+    assign NPCSel = (BRANCHE | BRANCHZ) ? 2'b01 :
+                    (J_j  | J_jal)      ? 2'b10 :
+                    (R_jr | R_jalr)     ? 2'b11 :
                     2'b00; // 其他
 
 
-    assign OPSel = (I_ori) ? 2'b01 :
+    assign OPSel = (R_and | R_or | R_xor | R_nor |
+                    I_andi| I_ori | I_xori)   ? 2'b01 : 
+                   (R_sll | R_srl | R_sra |
+                    R_sllv | R_srlv | R_srav) ? 2'b10 :
+                   (R_slt | R_sltu |
+                    I_slti | I_sltiu)         ? 2'b11 : 
                    2'b00; // 其他（算数运算）
 
     assign FuncSel = (OPSel == 2'b00) ? 
-                     {1'b0, R_subu} :
+                     {1'b0, R_sub | R_subu} :
                      (OPSel == 2'b01) ? 
-                     (IJ ? opcode[1:0] : funct[1:0]) : 
+                     (IJ ? opcode[1:0] : funct[1:0]) :
+                     (OPSel == 2'b10) ? 
+                     funct[1:0] : 
+                     (OPSel == 2'b11) ? 
+                     {1'b0, R_sltu | I_sltiu} : 
                      2'b00; // 其他特殊情况
+
+    assign MULTSel = {funct[3], funct[1:0]};
+
+    assign ISMULTDIV = MULTDIV | MLTO | MLFROM;
 
 
     assign DMSel = opcode[2:0];
@@ -157,7 +197,7 @@ module CTRL_Decoder(
     assign DMWE = STORE;
 
 
-    assign GRFWE = ALREG | ALIMM | EXTLUI | LOAD | JUMPW | JUMPRW;
+    assign GRFWE = ALREG | ALIMM | MLFROM | EXTLUI | LOAD | JUMPW | JUMPRW;
 
 
     assign GRF_A3_D_Sel = (ALIMM | EXTLUI | LOAD) ? 2'b10 :
@@ -171,14 +211,16 @@ module CTRL_Decoder(
 
     assign ALU_B_E_Sel  = ALIMM | LOAD | STORE;
 
+    assign OP_E_Sel = MLFROM;
 
-    assign Tuse_rs = (BRANCHE | BRANCHZ | JUMPR | JUMPRW) ? 2'd0 :
-                     (ALREG | ALIMM | LOAD | STORE)       ? 2'd1 :
+
+    assign Tuse_rs = (BRANCHE | BRANCHZ | JUMPR | JUMPRW)            ? 2'd0 :
+                     (ALREG | ALIMM | MULTDIV | MLTO | LOAD | STORE) ? 2'd1 :
                      2'd3;
 
-    assign Tuse_rt = (BRANCHE) ? 2'd0 :
-                     (ALREG)   ? 2'd1 :
-                     (STORE)   ? 2'd2 :
+    assign Tuse_rt = (BRANCHE)         ? 2'd0 :
+                     (ALREG | MULTDIV) ? 2'd1 :
+                     (STORE)           ? 2'd2 :
                      2'd3;
 
 endmodule

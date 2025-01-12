@@ -3,26 +3,16 @@
 
 `default_nettype none
 module DM(
-    input wire RESET,
-    input wire clk,
     input wire WE,
     input wire [2:0] DMSel,
     input wire [31:0] A,
     input wire [31:0] D,
-    output wire [31:0] Q,
-    // 评测需要输出
-    output wire [31:0] Exam_RAM_D
+    input wire [31:0] rdata,
+    output wire [31:0] wdata,
+    output wire [3:0] byteen,
+    output wire [31:0] Q
     );
     
-    // RAM Input & Output
-    wire [31:0] RAM_D;
-    wire [31:0] RAM_Q;
-
-    // 评测需要输出
-    // 由于目前只要求实现sw，实验教程没有明确说明当针对半字或字节的操作时应当如何处理
-    // 此处将处理后的32位数据进行输出
-    assign Exam_RAM_D = RAM_D;
-
     // Splitter
     wire [1:0] A_byte;
     wire [15:0] D_half;
@@ -32,65 +22,73 @@ module DM(
     assign D_half = D[15:0];
     assign D_byte = D[7:0];
 
+    // Handle rdata
+    wire [7:0] rdata_byte;
+    wire [15:0] rdata_half;
+    wire [31:0] rdata_byte_MUX;
+    wire [31:0] rdata_half_MUX;
 
-    // Handle D
-    wire [31:0] RAM_D_byte;
-    wire [31:0] RAM_D_half;
+    assign Q = (DMSel[1:0] == 2'b00) ? rdata_byte_MUX :
+               (DMSel[1:0] == 2'b01) ? rdata_half_MUX :
+               rdata; // DMSel[1:0] == 2'b10/2'b11
 
-    assign RAM_D = (DMSel[1:0] == 2'b00) ? RAM_D_byte :
-                   (DMSel[1:0] == 2'b01) ? RAM_D_half :
+    assign rdata_byte = (A_byte == 2'b00) ? rdata[7:0] :
+                        (A_byte == 2'b01) ? rdata[15:8] : 
+                        (A_byte == 2'b10) ? rdata[23:16] :
+                        rdata[31:24]; // A_byte == 2'b11
+
+    assign rdata_half = (A_byte[1] == 1'b0) ? rdata[15:0] :
+                        rdata[31:16]; // A_byte[1] == 1'b1
+
+    assign rdata_byte_MUX = (DMSel[2] == 1'b0) ? 
+                            {{24{rdata_byte[7]}}, rdata_byte} :
+                            // DMSel[2] == 1'b1
+                            {24'b0, rdata_byte}; 
+ 
+    assign rdata_half_MUX = (DMSel[2] == 1'b0) ? 
+                            {{16{rdata_half[15]}}, rdata_half} :
+                            // DMSel[2] == 1'b1
+                            {16'b0, rdata_half}; 
+
+    // Handle wdata
+    wire [31:0] wdata_byte;
+    wire [31:0] wdata_half;
+
+    assign wdata = (DMSel[1:0] == 2'b00) ? wdata_byte :
+                   (DMSel[1:0] == 2'b01) ? wdata_half :
                    D; // DMSel[1:0] == 2'b10/2'b11
 
-    assign RAM_D_byte = (A_byte == 2'b00) ?
-                        {RAM_Q[31:24], RAM_Q[23:16], RAM_Q[15:8], D_byte} :
+    assign wdata_byte = (A_byte == 2'b00) ?
+                        {8'b0, 8'b0, 8'b0, D_byte} :
                         (A_byte == 2'b01) ?
-                        {RAM_Q[31:24], RAM_Q[23:16], D_byte, RAM_Q[7:0]} :
+                        {8'b0, 8'b0, D_byte, 8'b0} :
                         (A_byte == 2'b10) ?
-                        {RAM_Q[31:24], D_byte, RAM_Q[15:8], RAM_Q[7:0]} :
+                        {8'b0, D_byte, 8'b0, 8'b0} :
                         // A_byte == 2'b11
-                        {D_byte, RAM_Q[23:16], RAM_Q[15:8], RAM_Q[7:0]};
+                        {D_byte, 8'b0, 8'b0, 8'b0};
 
-    assign RAM_D_half = (A_byte[1] == 1'b0) ?
-                        {RAM_Q[31:16], D_half} :
+    assign wdata_half = (A_byte[1] == 1'b0) ?
+                        {16'b0, D_half} :
                         // A_byte[1] == 1'b1
-                        {D_half, RAM_Q[15:0]};
+                        {D_half, 16'b0};
 
+    // Handle byteen
+    wire [3:0] byteen_enable;
+    wire [3:0] byteen_byte;
+    wire [3:0] byteen_half;
 
-    // Handle Q
-    wire [7:0] Q_byte;
-    wire [15:0] Q_half;
-    wire [31:0] Q_byte_MUX;
-    wire [31:0] Q_half_MUX;
+    assign byteen = (WE) ? byteen_enable : 4'b0000;
 
-    assign Q = (DMSel[1:0] == 2'b00) ? Q_byte_MUX :
-               (DMSel[1:0] == 2'b01) ? Q_half_MUX :
-               RAM_Q; // DMSel[1:0] == 2'b10/2'b11
+    assign byteen_enable = (DMSel[1:0] == 2'b00) ? byteen_byte :
+                           (DMSel[1:0] == 2'b01) ? byteen_half :
+                           4'b1111; // DMSel[1:0] == 2'b10/2'b11
 
-    assign Q_byte = (A_byte == 2'b00) ? RAM_Q[7:0] :
-                    (A_byte == 2'b01) ? RAM_Q[15:8] : 
-                    (A_byte == 2'b10) ? RAM_Q[23:16] :
-                    RAM_Q[31:24]; // A_byte == 2'b11
+    assign byteen_byte = (A_byte == 2'b00) ? 4'b0001 :
+                         (A_byte == 2'b01) ? 4'b0010 : 
+                         (A_byte == 2'b10) ? 4'b0100 :
+                         4'b1000; // A_byte == 2'b11
 
-    assign Q_half = (A_byte[1] == 1'b0) ? RAM_Q[15:0] :
-                    RAM_Q[31:16]; // A_byte[1] == 1'b1
-
-    assign Q_byte_MUX = (DMSel[2] == 1'b0) ? 
-                        {{24{Q_byte[7]}}, Q_byte} :
-                        // DMSel[2] == 1'b1
-                        {24'b0, Q_byte}; 
- 
-    assign Q_half_MUX = (DMSel[2] == 1'b0) ? 
-                        {{16{Q_half[15]}}, Q_half} :
-                        // DMSel[2] == 1'b1
-                        {16'b0, Q_half}; 
-
-
-    DM_RAM RAM_instance (.RESET(RESET),
-                         .clk(clk),
-                         .WE(WE),
-                         .A(A),
-                         .D(RAM_D),
-                         .Q(RAM_Q)
-    );
-
+    assign byteen_half = (A_byte[1] == 1'b0) ? 4'b0011 :
+                         4'b1100; // A_byte[1] == 1'b1
+    
 endmodule

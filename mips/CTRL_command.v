@@ -26,6 +26,15 @@
 `define I_ori 6'b001101
 `define I_xori 6'b001110
 
+// 3.乘除法类
+`define R_mult 6'b011000
+`define R_multu 6'b011001
+`define R_div 6'b011010
+`define R_divu 6'b011011
+`define R_mfhi 6'b010000
+`define R_mthi 6'b010001
+`define R_mflo 6'b010010
+`define R_mtlo 6'b010011
 
 // 寄存器操作类
 `define R_slt 6'b101010
@@ -64,3 +73,4 @@
 `define I_sb 6'b101000
 `define I_sh 6'b101001
 `define I_sw 6'b101011
+

@@ -4,9 +4,20 @@
 `default_nettype none
 module mips(
     input wire clk,
-    input wire reset
-    );
-
+    input wire reset,
+    input wire [31:0] i_inst_rdata,
+    input wire [31:0] m_data_rdata,
+    output wire [31:0] i_inst_addr,
+    output wire [31:0] m_data_addr,
+    output wire [31:0] m_data_wdata,
+    output wire [3 :0] m_data_byteen,
+    output wire [31:0] m_inst_addr,
+    output wire w_grf_we,
+    output wire [4:0] w_grf_addr,
+    output wire [31:0] w_grf_wdata,
+    output wire [31:0] w_inst_addr
+);
+    
     // 接线
 
     // 控制器
@@ -16,12 +27,15 @@ module mips(
     wire [1:0] CTRL_D_NPCSel;
     wire [1:0] CTRL_D_OPSel;
     wire [1:0] CTRL_D_FuncSel;
+    wire [2:0] CTRL_D_MULTSel;
+    wire CTRL_D_ISMULTDIV;
     wire [2:0] CTRL_D_DMSel;
     wire CTRL_D_DMWE;
     wire CTRL_D_GRFWE;
     wire [1:0] CTRL_D_GRF_A3_D_Sel;
     wire [1:0] CTRL_D_GRF_WD_W_Sel;
     wire CTRL_D_ALU_B_E_Sel;
+    wire CTRL_D_OP_E_Sel;
     wire [1:0] CTRL_D_Tuse_rs;
     wire [1:0] CTRL_D_Tuse_rt;
 
@@ -40,7 +54,6 @@ module mips(
 
     // F级
     // IFU
-    wire [31:0] IFU_Instr;
     wire [31:0] IFU_InstrAddr;
 
 
@@ -74,6 +87,7 @@ module mips(
 
     // MUX
     wire [4:0] MUX_GRF_A3_D;
+    wire [31:0] MUX_OP_E;
 
     // FMUX
     wire [31:0] FMUX_V1_D;
@@ -89,6 +103,9 @@ module mips(
     wire [1:0] OPSel_E;
     wire [1:0] GRF_WD_W_Sel_E;
     wire ALU_B_E_Sel_E;
+    wire OP_E_Sel_E;
+    wire [2:0] MULTSel_E;
+    wire ISMULTDIV_E;
     wire [31:0] V1_E;
     wire [31:0] V2_E;
     wire [4:0] shamt_E;
@@ -101,6 +118,11 @@ module mips(
 
     // ALU
     wire [31:0] ALU_OP;
+
+    // MULT
+    wire MULT_Start;
+    wire MULT_Busy;
+    wire [31:0] MULT_HILO;
 
     // MUX
     wire [31:0] MUX_ALU_B_E;
@@ -148,7 +170,6 @@ module mips(
     wire [31:0] Exam_InstrAddr_E;
     wire [31:0] Exam_InstrAddr_M;
     wire [31:0] Exam_InstrAddr_W;
-    wire [31:0] Exam_RAM_D;
 
 
     // 各模块
@@ -164,12 +185,15 @@ module mips(
     .NPCSel(CTRL_D_NPCSel),
     .OPSel(CTRL_D_OPSel),
     .FuncSel(CTRL_D_FuncSel),
+    .MULTSel(CTRL_D_MULTSel),
+    .ISMULTDIV(CTRL_D_ISMULTDIV),
     .DMSel(CTRL_D_DMSel),
     .DMWE(CTRL_D_DMWE),
     .GRFWE(CTRL_D_GRFWE),
     .GRF_A3_D_Sel(CTRL_D_GRF_A3_D_Sel),
     .GRF_WD_W_Sel(CTRL_D_GRF_WD_W_Sel),
     .ALU_B_E_Sel(CTRL_D_ALU_B_E_Sel),
+    .OP_E_Sel(CTRL_D_OP_E_Sel),
     .Tuse_rs(CTRL_D_Tuse_rs),
     .Tuse_rt(CTRL_D_Tuse_rt)
     );
@@ -186,6 +210,9 @@ module mips(
     .GRF_WD_W_Sel_M(GRF_WD_W_Sel_M),
     .GRF_A3_E(GRF_A3_E),
     .GRF_A3_M(GRF_A3_M),
+    .ISMULTDIV(CTRL_D_ISMULTDIV),
+    .MULT_Start(MULT_Start),
+    .MULT_Busy(MULT_Busy),
 
     .IFU_EN_N(CTRL_S_IFU_EN_N),
     .FR_D_EN_N(CTRL_S_FR_D_EN_N),
@@ -227,9 +254,10 @@ module mips(
     .instr_index(SPL_instr_index),
     .instr_register(FMUX_V1_D),
 
-    .Instr(IFU_Instr),
     .InstrAddr(IFU_InstrAddr)
     );
+
+    assign i_inst_addr = IFU_InstrAddr;
 
 
     // D级
@@ -240,7 +268,7 @@ module mips(
     .clk(clk),
     .STALL_EN_N(CTRL_S_FR_D_EN_N),
 
-    .D_Instr(IFU_Instr),
+    .D_Instr(i_inst_rdata),
     .D_InstrAddr(IFU_InstrAddr),
 
     .Q_Instr(Instr_D),
@@ -334,6 +362,9 @@ module mips(
     .D_OPSel(CTRL_D_OPSel),
     .D_GRF_WD_W_Sel(CTRL_D_GRF_WD_W_Sel),
     .D_ALU_B_E_Sel(CTRL_D_ALU_B_E_Sel),
+    .D_OP_E_Sel(CTRL_D_OP_E_Sel),
+    .D_MULTSel(CTRL_D_MULTSel),
+    .D_ISMULTDIV(CTRL_D_ISMULTDIV),
     .D_V1(FMUX_V1_D),
     .D_V2(FMUX_V2_D),
     .D_shamt(SPL_shamt),
@@ -351,6 +382,9 @@ module mips(
     .Q_OPSel(OPSel_E),
     .Q_GRF_WD_W_Sel(GRF_WD_W_Sel_E),
     .Q_ALU_B_E_Sel(ALU_B_E_Sel_E),
+    .Q_OP_E_Sel(OP_E_Sel_E),
+    .Q_MULTSel(MULTSel_E),
+    .Q_ISMULTDIV(ISMULTDIV_E),
     .Q_V1(V1_E),
     .Q_V2(V2_E),
     .Q_shamt(shamt_E),
@@ -371,8 +405,22 @@ module mips(
     .OP(ALU_OP)
     );
 
+    MULT MULT_instance (
+    .RESET(reset),
+    .clk(clk),
+    .ISMULTDIV(ISMULTDIV_E),
+    .MULTSel(MULTSel_E),
+    .A(FMUX_V1_E),
+    .B(MUX_ALU_B_E),
+    .Start(MULT_Start),
+    .Busy(MULT_Busy),
+    .HILO(MULT_HILO)
+    );
+
 
     assign MUX_ALU_B_E = ALU_B_E_Sel_E ? ext32_E : FMUX_V2_E;
+
+    assign MUX_OP_E = OP_E_Sel_E ? MULT_HILO : ALU_OP;
 
     assign FMUX_V1_E = (FMUX_V1_E_Sel_E == 2'b10) ? DM_Q_W :
                        (FMUX_V1_E_Sel_E == 2'b11) ? OP_M : 
@@ -399,7 +447,7 @@ module mips(
     .D_DMSel(DMSel_E),
     .D_GRF_WD_W_Sel(GRF_WD_W_Sel_E),
     .D_V2(FMUX_V2_E),
-    .D_OP(ALU_OP),
+    .D_OP(MUX_OP_E),
     .D_GRF_A3(GRF_A3_E),
     .D_ext32(ext32_E),
     .D_pc8(pc8_E),
@@ -418,17 +466,19 @@ module mips(
     );
 
     DM DM_instance (
-    .RESET(reset),
-    .clk(clk),
-
     .WE(DMWE_M),
     .DMSel(DMSel_M),
     .A(OP_M),
     .D(FMUX_DM_D_M),
-    .Q(DM_Q),
-    .Exam_RAM_D(Exam_RAM_D)
+    .rdata(m_data_rdata),
+    .wdata(m_data_wdata),
+    .byteen(m_data_byteen),
+    .Q(DM_Q)
     );
 
+    assign m_data_addr = OP_M;
+
+    assign m_inst_addr = Exam_InstrAddr_M;
 
     assign FMUX_DM_D_M = (FMUX_DM_D_M_Sel_M == 1'b1) ? DM_Q_W :
                          V2_M;
@@ -467,13 +517,12 @@ module mips(
                           (GRF_WD_W_Sel_W == 2'b11) ? pc8_W :
                           OP_W;
 
-    // 评测输出内容
-    always @(posedge clk) begin
-        if(GRFWE_W && GRF_A3_W != 5'd0) begin
-            $display("%d@%h: $%d <= %h",$time, Exam_InstrAddr_W, GRF_A3_W, MUX_GRF_WD_W);
-        end
-        if(DMWE_M) begin
-            $display("%d@%h: *%h <= %h",$time, Exam_InstrAddr_M, OP_M, Exam_RAM_D);
-        end
-    end
+    assign w_grf_we = GRFWE_W;
+
+    assign w_grf_addr = GRF_A3_W;
+
+    assign w_grf_wdata = MUX_GRF_WD_W;
+
+    assign w_inst_addr = Exam_InstrAddr_W;
+
 endmodule
