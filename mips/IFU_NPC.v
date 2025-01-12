@@ -1,14 +1,20 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 `timescale 1ns / 1ps
 
 `default_nettype none
+
+`include "Address_Map.v"
 module IFU_NPC(
+    input wire Req,
+    input wire ERET,
+
     input wire [31:0] PC,
     input wire [1:0] NPCSel,
     input wire BranchComp,
     input wire [15:0] offset,
     input wire [25:0] instr_index,
     input wire [31:0] instr_register,
+    input wire [31:0] EPC,
     output wire [31:0] NPC
     );
     
@@ -16,6 +22,7 @@ module IFU_NPC(
     wire [31:0] branch;
     wire [31:0] j_and_jal;
     wire [31:0] jr_and_jalr;
+    wire [31:0] NPC_No_Req;
     
     assign normal = PC + 32'h00000004;
     
@@ -26,10 +33,14 @@ module IFU_NPC(
     
     assign jr_and_jalr = instr_register;
     
-    assign NPC = (NPCSel == 2'b00) ? normal : 
-                 (NPCSel == 2'b01) ? branch :
-                 (NPCSel == 2'b10) ? j_and_jal :
-                 (NPCSel == 2'b11) ? jr_and_jalr :
-                 32'h00003000;
+    assign NPC_No_Req = (NPCSel == 2'b00) ? normal : 
+                        (NPCSel == 2'b01) ? branch :
+                        (NPCSel == 2'b10) ? j_and_jal :
+                        (NPCSel == 2'b11) ? jr_and_jalr :
+                        `PC_INIT;
+
+    assign NPC = (Req)  ? `HANDLE_START : 
+                 (ERET) ? EPC :
+                 NPC_No_Req;
 
 endmodule

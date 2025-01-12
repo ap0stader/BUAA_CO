@@ -1,0 +1,23 @@
+// Verified: 2024-08-29
+
+// 地址图
+`define PC_INIT      32'h0000_3000
+`define HANDLE_START 32'h0000_4180
+
+// PC
+`define VALID_PC_START 32'h0000_3000
+`define VALID_PC_END   32'h0000_6FFC
+
+// BRIDGE
+`define VALID_DM_START        32'h0000_0000
+`define VALID_DM_END          32'h0000_2FFF
+`define VALID_TC0_START       32'h0000_7F00
+`define VALID_TC0_END         32'h0000_7F0B
+`define VALID_TC1_START       32'h0000_7F10
+`define VALID_TC1_END         32'h0000_7F1B
+`define VALID_IG_START        32'h0000_7F20
+`define VALID_IG_END          32'h0000_7F23
+`define VALID_TC0_COUNT_START 32'h0000_7F08
+`define VALID_TC0_COUNT_END   32'h0000_7F0B
+`define VALID_TC1_COUNT_START 32'h0000_7F18
+`define VALID_TC1_COUNT_END   32'h0000_7F1B

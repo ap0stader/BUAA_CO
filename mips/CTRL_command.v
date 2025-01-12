@@ -1,4 +1,4 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 
 // 算数与逻辑运算类
 // 1.算数类
@@ -64,7 +64,7 @@
 `define J_jal 6'b000011
 
 
-// 内存操作类
+// 系统桥操作类
 `define I_lb 6'b100000
 `define I_lh 6'b100001
 `define I_lw 6'b100011
@@ -74,3 +74,13 @@
 `define I_sh 6'b101001
 `define I_sw 6'b101011
 
+
+// 异常处理类
+`define COP0 6'b010000
+
+`define rs_mfc0 5'b00000
+`define rs_mtc0 5'b00100
+`define rs_eret 5'b10000
+`define funct_eret 6'b011000
+
+`define R_syscall 6'b001100

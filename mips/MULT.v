@@ -1,4 +1,4 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -11,12 +11,17 @@
 module MULT(
     input wire RESET,
     input wire clk,
+    input wire Req, 
+
     input wire ISMULTDIV,
     input wire [2:0] MULTSel,
+    
     input wire [31:0] A,
     input wire [31:0] B,
+
     output wire Start,
     output reg Busy,
+
     output wire [31:0] HILO
     );
     
@@ -46,7 +51,8 @@ module MULT(
             simulation_counter <= 4'd0;
         end
         // 准备计算乘法和除法
-        else if (Start) begin
+        // 如果即将进入中断处理程序，不得开始乘法除法操作
+        else if (Start & ~Req) begin
             Busy <= 1'b1;
             calculation_method <= MULTSel[1:0];
             stored_A <= A;
@@ -55,6 +61,7 @@ module MULT(
         end
         // 乘法和除法计算过程
         else if (Busy) begin
+            // 已经在进行的乘法和除法操作则继续正常进行
             if (simulation_counter == 4'd1) begin
                 Busy <= 1'b0;
 
@@ -80,7 +87,7 @@ module MULT(
             simulation_counter <= simulation_counter - 4'd1;
         end
         // 写入HI或者LO
-        else if (ISMULTDIV & ~MULTSel[2] & MULTSel[0]) begin
+        else if (ISMULTDIV & ~MULTSel[2] & MULTSel[0] & ~Req) begin
             if(MULTSel[1] == 1'b0) begin
                 HI <= A;
             end

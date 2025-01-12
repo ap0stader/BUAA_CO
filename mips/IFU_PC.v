@@ -1,10 +1,13 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 `timescale 1ns / 1ps
 
 `default_nettype none
+
+`include "Address_Map.v"
 module IFU_PC(
     input wire RESET,
     input wire clk,
+    input wire Req,
     input wire STALL_EN_N,
     input wire [31:0] D,
     output wire [31:0] Q
@@ -14,9 +17,10 @@ module IFU_PC(
     
     always @(posedge clk) begin
         if(RESET) begin
-            PC <= 32'h00003000;
+            PC <= `PC_INIT;
         end
-        else if(~ STALL_EN_N) begin
+        // 在暂停期间要进入中断处理程序也要更新PC
+        else if(~ STALL_EN_N || Req) begin
             PC <= D;
         end
     end

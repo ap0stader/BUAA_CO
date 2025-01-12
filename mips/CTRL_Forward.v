@@ -1,4 +1,4 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -18,7 +18,7 @@ module CTRL_Forward (
     output wire [2:0] FMUX_V2_D_Sel,
     output wire [1:0] FMUX_V1_E_Sel,
     output wire [1:0] FMUX_V2_E_Sel,
-    output wire FMUX_DM_D_M_Sel
+    output wire FMUX_V2_M_Sel
     );
 
     // rs
@@ -118,6 +118,6 @@ module CTRL_Forward (
                            (rt_F32) ? 2'b10 :
                            2'b00;
 
-    assign FMUX_DM_D_M_Sel = rt_F62;
+    assign FMUX_V2_M_Sel = rt_F62;
 
 endmodule

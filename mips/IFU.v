@@ -1,4 +1,4 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -6,11 +6,15 @@ module IFU(
     input wire RESET,
     input wire clk,
     input wire STALL_EN_N,
+    input wire Req,
+    input wire ERET,
+
     input wire [1:0] NPCSel,
     input wire BranchComp,
     input wire [15:0] offset,
     input wire [25:0] instr_index,
     input wire [31:0] instr_register,
+    input wire [31:0] EPC,
     output wire [31:0] InstrAddr
     );
     
@@ -18,16 +22,20 @@ module IFU(
   
     IFU_PC PC_instance(.RESET(RESET),
                        .clk(clk),
+                       .Req(Req),
                        .STALL_EN_N(STALL_EN_N),
                        .D(NPC_NPC),
                        .Q(InstrAddr));
     
-    IFU_NPC NPC_instance(.PC(InstrAddr),
+    IFU_NPC NPC_instance(.Req(Req),
+                         .ERET(ERET),
+                         .PC(InstrAddr),
                          .NPCSel(NPCSel),
                          .BranchComp(BranchComp),
                          .offset(offset),
                          .instr_index(instr_index),
                          .instr_register(instr_register),
+                         .EPC(EPC),
                          .NPC(NPC_NPC));
 
 endmodule

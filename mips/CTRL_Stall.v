@@ -1,4 +1,4 @@
-// Verified: 2024-08-28
+// Verified: 2024-08-29
 `timescale 1ns / 1ps
 
 `default_nettype none
@@ -18,7 +18,7 @@ module CTRL_Stall (
     input wire MULT_Busy,
 
     output wire IFU_EN_N,
-    output wire FR_D_EN_N,
+    output wire D_EN_N,
     output wire FR_E_RESET
     );
 
@@ -90,7 +90,7 @@ module CTRL_Stall (
 
     assign IFU_EN_N   = S;
 
-    assign FR_D_EN_N  = S;
+    assign D_EN_N     = S;
 
     assign FR_E_RESET = S;
 
